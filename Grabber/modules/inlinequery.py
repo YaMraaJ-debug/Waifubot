@@ -11,13 +11,13 @@ async def inlinequery(update: Update, context: CallbackContext) -> None:
     query = update.inline_query.query
     offset = int(update.inline_query.offset) if update.inline_query.offset else 0
 
-    
+
     if query.startswith('collection.'):
         user_id, *search_terms = query.split(' ')[0].split('.')[1], ' '.join(query.split(' ')[1:])
         if user_id.isdigit():
             user = await user_collection.find_one({'id': int(user_id)})
             if user:
-                
+
                 all_characters = list({v['id']:v for v in user['characters']}.values())
                 if search_terms:
                     regex = re.compile(' '.join(search_terms), re.IGNORECASE)
@@ -26,12 +26,11 @@ async def inlinequery(update: Update, context: CallbackContext) -> None:
                 all_characters = []
         else:
             all_characters = []
+    elif query:
+        regex = re.compile(query, re.IGNORECASE)
+        all_characters = list(await collection.find({"$or": [{"name": regex}, {"anime": regex}]}).to_list(length=None))
     else:
-        if query:
-            regex = re.compile(query, re.IGNORECASE)
-            all_characters = list(await collection.find({"$or": [{"name": regex}, {"anime": regex}]}).to_list(length=None))
-        else:
-            all_characters = list(await collection.find({}).to_list(length=None))
+        all_characters = list(await collection.find({}).to_list(length=None))
 
     characters = all_characters[offset:offset+50]
     if len(characters) > 50:

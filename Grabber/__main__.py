@@ -11,7 +11,7 @@ from telegram import Update
 from telegram.ext import CommandHandler, CallbackContext, MessageHandler, filters
 
 from Grabber import collection, top_global_groups_collection, group_user_totals_collection, user_collection, user_totals_collection, Grabberu
-from Grabber import application, LOGGER 
+from Grabber import application, LOGGER
 from Grabber.modules import ALL_MODULES
 
 
@@ -25,14 +25,14 @@ message_counts = {}
 
 
 for module_name in ALL_MODULES:
-    imported_module = importlib.import_module("Grabber.modules." + module_name)
+    imported_module = importlib.import_module(f"Grabber.modules.{module_name}")
 
 
 last_user = {}
 warned_users = {}
 def escape_markdown(text):
     escape_chars = r'\*_`\\~>#+-=|{}.!'
-    return re.sub(r'([%s])' % re.escape(escape_chars), r'\\\1', text)
+    return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
 
 
 async def message_counter(update: Update, context: CallbackContext) -> None:
@@ -51,31 +51,31 @@ async def message_counter(update: Update, context: CallbackContext) -> None:
         else:
             message_frequency = 100
 
-        
+
         if chat_id in last_user and last_user[chat_id]['user_id'] == user_id:
             last_user[chat_id]['count'] += 1
             if last_user[chat_id]['count'] >= 10:
-            
-                if user_id in warned_users and time.time() - warned_users[user_id] < 600:
-                    return
-                else:
-                    
+
+                if (
+                    user_id not in warned_users
+                    or time.time() - warned_users[user_id] >= 600
+                ):
                     await update.message.reply_text(f"⚠️ Don't Spam {update.effective_user.first_name}...\nYour Messages Will be ignored for 10 Minutes...")
                     warned_users[user_id] = time.time()
-                    return
+                return
         else:
             last_user[chat_id] = {'user_id': user_id, 'count': 1}
 
-    
+
         if chat_id in message_counts:
             message_counts[chat_id] += 1
         else:
             message_counts[chat_id] = 1
 
-    
+
         if message_counts[chat_id] % message_frequency == 0:
             await send_image(update, context)
-            
+
             message_counts[chat_id] = 0
             
 async def send_image(update: Update, context: CallbackContext) -> None:
@@ -118,11 +118,13 @@ async def guess(update: Update, context: CallbackContext) -> None:
         return
 
     if chat_id in first_correct_guesses:
-        await update.message.reply_text(f'❌️ Already Guessed By Someone.. Try Next Time Bruhh ')
+        await update.message.reply_text(
+            '❌️ Already Guessed By Someone.. Try Next Time Bruhh '
+        )
         return
 
     guess = ' '.join(context.args).lower() if context.args else ''
-    
+
     if "()" in guess or "&" in guess.lower():
         await update.message.reply_text("Nahh You Can't use This Types of words in your guess..❌️")
         return
@@ -132,9 +134,9 @@ async def guess(update: Update, context: CallbackContext) -> None:
 
     if sorted(name_parts) == sorted(guess.split()) or any(part == guess for part in name_parts):
 
-    
+
         first_correct_guesses[chat_id] = user_id
-        
+
         user = await user_collection.find_one({'id': user_id})
         if user:
             update_fields = {}
@@ -144,9 +146,9 @@ async def guess(update: Update, context: CallbackContext) -> None:
                 update_fields['first_name'] = update.effective_user.first_name
             if update_fields:
                 await user_collection.update_one({'id': user_id}, {'$set': update_fields})
-            
+
             await user_collection.update_one({'id': user_id}, {'$push': {'characters': last_characters[chat_id]}})
-      
+
         elif hasattr(update.effective_user, 'username'):
             await user_collection.insert_one({
                 'id': user_id,
@@ -155,7 +157,7 @@ async def guess(update: Update, context: CallbackContext) -> None:
                 'characters': [last_characters[chat_id]],
             })
 
-        
+
         group_user_total = await group_user_totals_collection.find_one({'user_id': user_id, 'group_id': chat_id})
         if group_user_total:
             update_fields = {}
@@ -165,9 +167,9 @@ async def guess(update: Update, context: CallbackContext) -> None:
                 update_fields['first_name'] = update.effective_user.first_name
             if update_fields:
                 await group_user_totals_collection.update_one({'user_id': user_id, 'group_id': chat_id}, {'$set': update_fields})
-            
+
             await group_user_totals_collection.update_one({'user_id': user_id, 'group_id': chat_id}, {'$inc': {'count': 1}})
-      
+
         else:
             await group_user_totals_collection.insert_one({
                 'user_id': user_id,
@@ -178,7 +180,7 @@ async def guess(update: Update, context: CallbackContext) -> None:
             })
 
 
-    
+
         group_info = await top_global_groups_collection.find_one({'group_id': chat_id})
         if group_info:
             update_fields = {}
@@ -186,9 +188,9 @@ async def guess(update: Update, context: CallbackContext) -> None:
                 update_fields['group_name'] = update.effective_chat.title
             if update_fields:
                 await top_global_groups_collection.update_one({'group_id': chat_id}, {'$set': update_fields})
-            
+
             await top_global_groups_collection.update_one({'group_id': chat_id}, {'$inc': {'count': 1}})
-      
+
         else:
             await top_global_groups_collection.insert_one({
                 'group_id': chat_id,
@@ -197,8 +199,15 @@ async def guess(update: Update, context: CallbackContext) -> None:
             })
 
 
-        
-        keyboard = [[InlineKeyboardButton(f"See Harem", switch_inline_query_current_chat=f"collection.{user_id}")]]
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "See Harem",
+                    switch_inline_query_current_chat=f"collection.{user_id}",
+                )
+            ]
+        ]
 
 
         await update.message.reply_text(f'<b><a href="tg://user?id={user_id}">{escape(update.effective_user.first_name)}</a></b> You Guessed a New Character ✅️ \n𝗡𝗔𝗠𝗘: <b>{last_characters[chat_id]["name"]}</b> \n𝗔𝗡𝗜𝗠𝗘: <b>{last_characters[chat_id]["anime"]}</b> \n𝗥𝗔𝗜𝗥𝗧𝗬: <b>{last_characters[chat_id]["rarity"]}</b>\n\nThis Character added in Your harem.. use /harem To see your harem', parse_mode='HTML', reply_markup=InlineKeyboardMarkup(keyboard))
