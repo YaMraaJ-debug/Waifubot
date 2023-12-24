@@ -16,23 +16,21 @@ async def start(update: Update, context: CallbackContext) -> None:
     user_data = await collection.find_one({"_id": user_id})
 
     if user_data is None:
-        
+
         await collection.insert_one({"_id": user_id, "first_name": first_name, "username": username})
-        
+
         await context.bot.send_message(chat_id=GROUP_ID, 
                                        text=f"New user Started The Bot..\n User: <a href='tg://user?id={user_id}>{escape(first_name)})</a>", 
                                        parse_mode='HTML')
-    else:
-        
-        if user_data['first_name'] != first_name or user_data['username'] != username:
-            
-            await collection.update_one({"_id": user_id}, {"$set": {"first_name": first_name, "username": username}})
+    elif user_data['first_name'] != first_name or user_data['username'] != username:
 
-    
+        await collection.update_one({"_id": user_id}, {"$set": {"first_name": first_name, "username": username}})
+
+
 
     if update.effective_chat.type== "private":
-        
-        
+
+
         caption = f"""
         ***Heyyyy...***
 
@@ -52,14 +50,22 @@ async def start(update: Update, context: CallbackContext) -> None:
     else:
         photo_url = random.choice(PHOTO_URL)
         keyboard = [
-            
-            [InlineKeyboardButton("sᴜᴘᴘᴏʀᴛ", url=f'https://t.me/{SUPPORT_CHAT}'),
-            InlineKeyboardButton("ᴜᴏᴅᴀᴛᴇs", url=f'https://t.me/{UPDATE_CHAT}')],
-            [InlineKeyboardButton("ᴀᴅᴅ ᴍᴇ", url=f'http://t.me/{BOT_USERNAME}?startgroup=new')],
-            [InlineKeyboardButton("ᴅᴇᴠ", url=f'http://t.me/iam_daxx')],
-            
+            [
+                InlineKeyboardButton(
+                    "sᴜᴘᴘᴏʀᴛ", url=f'https://t.me/{SUPPORT_CHAT}'
+                ),
+                InlineKeyboardButton(
+                    "ᴜᴏᴅᴀᴛᴇs", url=f'https://t.me/{UPDATE_CHAT}'
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    "ᴀᴅᴅ ᴍᴇ", url=f'http://t.me/{BOT_USERNAME}?startgroup=new'
+                )
+            ],
+            [InlineKeyboardButton("ᴅᴇᴠ", url='http://t.me/iam_daxx')],
         ]
-        
+
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_photo(chat_id=update.effective_chat.id, photo=photo_url, caption="ɪ ᴀᴍ ᴀʟɪᴠᴇ ʙᴀʙʏ",reply_markup=reply_markup )
 
@@ -83,24 +89,34 @@ async def button(update: Update, context: CallbackContext) -> None:
    """
         help_keyboard = [[InlineKeyboardButton("⤾ Bᴀᴄᴋ", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(help_keyboard)
-        
+
         await context.bot.edit_message_caption(chat_id=update.effective_chat.id, message_id=query.message.message_id, caption=help_text, reply_markup=reply_markup, parse_mode='markdown')
 
     elif query.data == 'back':
 
-        caption = f"""
+        caption = """
         ***Hoyyyy...*** ✨
 
 ***I am An Open Source Character Catcher Bot..​Add Me in Your group.. And I will send Random Characters After.. every 100 messages in Group... Use /guess to.. Collect that Characters in Your Collection.. and see Collection by using /Harem... So add in Your groups and Collect Your harem***
         """
 
-        
+
         keyboard = [
-            [InlineKeyboardButton("ᴀᴅᴅ ᴍᴇ", url=f'http://t.me/{BOT_USERNAME}?startgroup=new')],
-            [InlineKeyboardButton("sᴜᴘᴘᴏʀᴛ", url=f'https://t.me/{SUPPORT_CHAT}'),
-            InlineKeyboardButton("ᴜᴘᴅᴀᴛᴇs", url=f'https://t.me/{UPDATE_CHAT}')],
+            [
+                InlineKeyboardButton(
+                    "ᴀᴅᴅ ᴍᴇ", url=f'http://t.me/{BOT_USERNAME}?startgroup=new'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "sᴜᴘᴘᴏʀᴛ", url=f'https://t.me/{SUPPORT_CHAT}'
+                ),
+                InlineKeyboardButton(
+                    "ᴜᴘᴅᴀᴛᴇs", url=f'https://t.me/{UPDATE_CHAT}'
+                ),
+            ],
             [InlineKeyboardButton("ʜᴇʟᴘ", callback_data='help')],
-            [InlineKeyboardButton("ᴅᴇᴠ", url=f'https://github.com/DAXXTEAM')]
+            [InlineKeyboardButton("ᴅᴇᴠ", url='https://github.com/DAXXTEAM')],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 

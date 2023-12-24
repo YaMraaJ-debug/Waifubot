@@ -27,11 +27,11 @@ async def global_leaderboard(update: Update, context: CallbackContext) -> None:
         group_name = html.escape(group.get('group_name', 'Unknown'))
 
         if len(group_name) > 10:
-            group_name = group_name[:15] + '...'
+            group_name = f'{group_name[:15]}...'
         count = group['count']
         leaderboard_message += f'{i}. <b>{group_name}</b> ➾ <b>{count}</b>\n'
-    
-    
+
+
     photo_url = random.choice(PHOTO_URL)
 
     await update.message.reply_photo(photo=photo_url, caption=leaderboard_message, parse_mode='HTML')
@@ -54,10 +54,10 @@ async def ctop(update: Update, context: CallbackContext) -> None:
         first_name = html.escape(user.get('first_name', 'Unknown'))
 
         if len(first_name) > 10:
-            first_name = first_name[:15] + '...'
+            first_name = f'{first_name[:15]}...'
         character_count = user['character_count']
         leaderboard_message += f'{i}. <a href="https://t.me/{username}"><b>{first_name}</b></a> ➾ <b>{character_count}</b>\n'
-    
+
     photo_url = random.choice(PHOTO_URL)
 
     await update.message.reply_photo(photo=photo_url, caption=leaderboard_message, parse_mode='HTML')
@@ -79,10 +79,10 @@ async def leaderboard(update: Update, context: CallbackContext) -> None:
         first_name = html.escape(user.get('first_name', 'Unknown'))
 
         if len(first_name) > 10:
-            first_name = first_name[:15] + '...'
+            first_name = f'{first_name[:15]}...'
         character_count = user['character_count']
         leaderboard_message += f'{i}. <a href="https://t.me/{username}"><b>{first_name}</b></a> ➾ <b>{character_count}</b>\n'
-    
+
     photo_url = random.choice(PHOTO_URL)
 
     await update.message.reply_photo(photo=photo_url, caption=leaderboard_message, parse_mode='HTML')
@@ -96,12 +96,12 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
             await update.message.reply_text('Please reply to a message to broadcast.')
             return
 
-        
+
         all_users = await user_collection.find({}).to_list(length=None)
         all_groups = await group_user_totals_collection.find({}).to_list(length=None)
-        
-        unique_user_ids = set(user['id'] for user in all_users)
-        unique_group_ids = set(group['group_id'] for group in all_groups)
+
+        unique_user_ids = {user['id'] for user in all_users}
+        unique_group_ids = {group['group_id'] for group in all_groups}
 
         total_sent = 0
         total_failed = 0
@@ -114,7 +114,7 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
             except Exception:
                 total_failed += 1
 
-        
+
         for group_id in unique_group_ids:
             try:
                 await context.bot.forward_message(chat_id=group_id, from_chat_id=update.effective_chat.id, message_id=update.message.reply_to_message.message_id)
@@ -122,7 +122,7 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
             except Exception:
                 total_failed += 1
 
-        
+
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=f'Broadcast report:\n\nTotal messages sent successfully: {total_sent}\nTotal messages failed to send: {total_failed}'
@@ -157,9 +157,7 @@ async def send_users_document(update: Update, context: CallbackContext) -> None:
     users = []
     async for document in cursor:
         users.append(document)
-    user_list = ""
-    for user in users:
-        user_list += f"{user['first_name']}\n"
+    user_list = "".join(f"{user['first_name']}\n" for user in users)
     with open('users.txt', 'w') as f:
         f.write(user_list)
     with open('users.txt', 'rb') as f:
